@@ -2,7 +2,7 @@
 
 ### One Paragraph Explainer
 
-The permissive nature of JS along with its variety code-flow options (e.g. EventEmitter, Callbacks, Promises, etc) pushes to great variance in how developers raise errors – some use strings, other define their own custom types. Using Node.js built-in Error object helps to keep uniformity within your code and with 3rd party libraries, it also preserves significant information like the StackTrace. When raising the exception, it’s usually a good practice to fill it with additional contextual properties like the error name and the associated HTTP error code. To achieve this uniformity and practices, consider extending the Error object with additional properties, see code example below
+The permissive nature of JavaScript along with its variety of code-flow options (e.g. EventEmitter, Callbacks, Promises, etc) pushes to great variance in how developers raise errors – some use strings, other define their own custom types. Using Node.js built-in Error object helps to keep uniformity within your code and with 3rd party libraries, it also preserves significant information like the StackTrace. When raising the exception, it’s usually a good practice to fill it with additional contextual properties like the error name and the associated HTTP error code. To achieve this uniformity and practices, consider extending the Error object with additional properties, see code example below
 
 ### Code Example – doing it right
 
@@ -38,6 +38,9 @@ if(!productToAdd)
 
 ### Code example – doing it even better
 
+<details>
+<summary><strong>Javascript</strong></summary>
+
 ```javascript
 // centralized error object that derives from Node’s Error
 function AppError(name, httpCode, description, isOperational) {
@@ -55,6 +58,38 @@ module.exports.AppError = AppError;
 if(user == null)
     throw new AppError(commonErrors.resourceNotFound, commonHTTPErrors.notFound, "further explanation", true)
 ```
+</details>
+
+<details>
+<summary><strong>Typescript</strong></summary>
+
+```typescript
+// centralized error object that derives from Node’s Error
+export class AppError extends Error {
+  public readonly name: string;
+  public readonly httpCode: HttpCode;
+  public readonly isOperational: boolean;
+
+  constructor(name: string, httpCode: HttpCode, description: string, isOperational: boolean) {
+    super(description);
+
+    Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+
+    this.name = name;
+    this.httpCode = httpCode;
+    this.isOperational = isOperational;
+
+    Error.captureStackTrace(this);
+  }
+}
+
+// client throwing an exception
+if(user == null)
+    throw new AppError(commonErrors.resourceNotFound, commonHTTPErrors.notFound, "further explanation", true)
+```
+</details>
+
+*Explanation about the `Object.setPrototypeOf` in Typescript: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html#support-for-newtarget*
 
 ### Blog Quote: "I don’t see the value in having lots of different types"
 
